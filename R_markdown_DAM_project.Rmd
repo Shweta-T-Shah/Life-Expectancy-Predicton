@@ -472,7 +472,6 @@ sigma(model)/mean(life_expectancy_data$Life.expectancy)
 
 In our multiple regression example, the RSE is 5.860291 corresponding to 8.4% error rate which is pretty good.
 
-end
 
 
 
