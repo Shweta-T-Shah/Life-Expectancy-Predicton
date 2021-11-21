@@ -57,8 +57,45 @@ boxplot(life_expectancy_data$Life.expectancy, xlab="Life Expectancy")
 
 #Performing a linear regression and finding out factors affecting life expectancy 
 
+#Life Expectancy vs Percentage Expenditure
+
+cor(life_expectancy_data$Life.expectancy, life_expectancy_data$percentage.expenditure)
+
+library(ggplot2)
+library(GGally)
+ggpairs(life_expectancy_data %>% select(Life.expectancy, percentage.expenditure))
+
+model_per_expenditure <- lm(percentage.expenditure ~ Life.expectancy, life_expectancy_data)
+summary(model_per_expenditure)
+
+model_per_expenditure$coefficients[2]
 
 
 
+library(plotly)
+life_expectancy_vs_percenntage_expenditure <- plot_ly(data = life_expectancy_data, x = ~percentage.expenditure, y = ~Life.expectancy,
+                                      marker = list(size = 10,
+                                                    color = 'rgba(0,255,0, .9)',
+                                                    line = list(color = 'rgba(255, 0, 38, 0.2)',
+                                                                width = 2)))
+
+life_expectancy_vs_percenntage_expenditure <- life_expectancy_vs_percenntage_expenditure %>% layout(title = 'Scatter Plot: Life Expectancy vs Percentage Expenditure',
+                                                                    yaxis = list(zeroline = FALSE),
+                                                                    xaxis = list(zeroline = FALSE))
+
+life_expectancy_vs_percenntage_expenditure
 
 
+
+install.packages("datarium")
+library(tidyverse)
+data("life_expectancy_data", package = "datarium")
+head(life_expectancy_data, 4)
+
+
+
+library(tidyverse)
+
+
+model <- lm(life_expectancy_data_num ~ ., data = life_expectancy_data)
+summary(model)

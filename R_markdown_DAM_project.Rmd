@@ -2,6 +2,10 @@
 title: "Data Analysis Methods"
 output: html_document
 ---
+<style>
+    body { background-color: HoneyDew; }
+    pre, pre:not([class]) { background-color: White; }
+</style>
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -13,18 +17,465 @@ The Global Health Observatory (GHO) data repository under World Health Organizat
 
 This dataset has been sourced from Kaggle. Source link <https://www.kaggle.com/kumarajarshi/life-expectancy-who>.
 
-<H5>Exploratory Data Analysis</H5>
+<H2>Exploratory Data Analysis</H2>
 
 ```{r cars}
-summary(cars)
+library(tidyverse)
+library(plotly)
+
+#Reading csv file
+life_expectancy_data <- read.csv("C:/Users/shah3sw/OneDrive - University of Cincinnati/Data_Analysis_Method_Project/Life Expectancy Data.csv")
+head(life_expectancy_data)
+
+#Dimensions : Gives numbers of rows and columns
+dim(life_expectancy_data)
+
+# Structure of dataset
+str(life_expectancy_data)
+
+#Summary
+summary(life_expectancy_data)
+
+#Check for missing values
+colSums(is.na(life_expectancy_data))
 ```
 
-## Including Plots
+**We found out the missing value in each variable**
 
-You can also embed plots, for example:
+1. BMI - 34   11%
+2. Hep B 553 18%   
+3. Alcohol - 194    6%
+4. Total Expenditure - 226   7.6%
+5. Diptheria - 19
+6. GDP - 448   15%
+7. Population - 652   22.19%
+8. Income composition of resources - 167  5.6%
+9. Schooling - 163   5.5%
+10. thin 1-19 -34
+11. thin 5-9 - 34
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+We will replace blank values with mean to avoid errors in our analysis.
+
+
+```{r cars1}
+# Select numeric variables for calculating mean
+life_expectancy_data_num <- select(life_expectancy_data,-c(1,2,3))
+
+#Calculate means of all the numeric variables
+colMeans(life_expectancy_data_num, na.rm = TRUE)
+
+
+# Impute missing values in numeric variables with mean
+for(i in 4:ncol(life_expectancy_data)) {
+  life_expectancy_data[ , i][is.na(life_expectancy_data[ , i])] <- mean(life_expectancy_data[ , i], na.rm=TRUE)
+}
+summary(life_expectancy_data) 
+
+
+# We can see that now the data set has no missing values
+colSums(is.na(life_expectancy_data))
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+While predicting life expectancy there could be few outliers that we need to ignore.
+
+```{r cars2}
+#Plotting box plots of life expectancy to understand outliers
+boxplot(life_expectancy_data$Life.expectancy, xlab="Life Expectancy")
+```
+
+From the box plot we can see that age below 45 is outlier. Our analysis is not applicable for these records.
+
+<H2>Linear Regression</H2>
+Now we will perform linear regression to identify how each factor contributes to the life expectancy of a person.
+
+Let's start with the field "Percentage Expenditure"
+
+<H5><b>1. Life expectancy vs Percentage expenditure</b></H5>
+**Percentge Expenditure**
+represents expenditure on health as a percentage of Gross Domestic Product per capita(%)
+
+First, lets find out correlation between Percentage Expenditure and Life Expectancy
+
+```{r cars3}
+#Plotting box plots of life expectancy to understand outliers
+cor(life_expectancy_data$Life.expectancy, life_expectancy_data$percentage.expenditure)
+
+model_per_expenditure <- lm(percentage.expenditure ~ Life.expectancy, life_expectancy_data)
+summary(model_per_expenditure)
+
+```
+
+The value of <b>0.3817912</b> indicates that there is a <b>moderate positive correlation</b> between percentage expenditure and life expectancy. Estimated coefficient for percentage expenditure is statistically significant, as the associated p value is less than 0.05. 
+
+<i><b>Interpretation would be for every 1k percentage expenditure increase  life expectancy increases by 79.827 years</b></i>
+
+
+```{r cars4}
+
+library(plotly)
+life_expectancy_vs_percenntage_expenditure <- plot_ly(data = life_expectancy_data, x = ~percentage.expenditure, y = ~Life.expectancy,
+                                      marker = list(size = 10,
+                                                    color = 'rgba(0, 255, 127, .9)',
+                                                    line = list(color = 'rgba(255, 0, 38, 0.2)',
+                                                                width = 2)))
+
+life_expectancy_vs_percenntage_expenditure <- life_expectancy_vs_percenntage_expenditure %>% layout(title = 'Scatter Plot: Life Expectancy vs Percentage Expenditure',
+                                                                    yaxis = list(zeroline = FALSE),
+                                                                    xaxis = list(zeroline = FALSE))
+
+life_expectancy_vs_percenntage_expenditure
+
+```
+
+Similar Analysis could be done for other variables.  
+
+<H5><b>2. Life expectancy vs Hepatitis B</b></H5>
+**Hepatitis B**
+Hepatitis B (HepB) immunization coverage among 1-year-olds (%)
+
+```{r cars5}
+
+library(plotly)
+life_expectancy_vs_Hepatitis_B <- plot_ly(data = life_expectancy_data, x = ~Hepatitis.B, y = ~Life.expectancy,
+                                      marker = list(size = 10,
+                                                    color = 'rgba(0,255,0, .9)',
+                                                  line = list(color = 'rgba(255, 0, 38, 0.2)',
+                                                              width = 2)))
+
+life_expectancy_vs_Hepatitis_B <- life_expectancy_vs_Hepatitis_B %>% layout(title = 'Scatter Plot: Life Expectancy vs Hepatitis B',
+                                                                    yaxis = list(zeroline = FALSE),
+                                                                    xaxis = list(zeroline = FALSE))
+
+life_expectancy_vs_Hepatitis_B
+
+```
+
+
+<H5><b>3. Life expectancy vs Measles </b></H5>
+**Measles**
+represents the number of reported cases per 1000 population
+
+```{r cars6}
+
+library(plotly)
+life_expectancy_vs_Measles  <- plot_ly(data = life_expectancy_data, x = ~Measles , y = ~Life.expectancy,
+                                      marker = list(size = 10,
+                                                    color =  'rgba(221,160,221, .9)',
+                                                     line = list(color = 'rgba(255, 0, 38, 0.2)',
+                                                                 width = 2)))
+life_expectancy_vs_Measles  <- life_expectancy_vs_Measles  %>% layout(title = 'Scatter Plot: Life Expectancy vs Measles',
+                                                                    yaxis = list(zeroline = FALSE),
+                                                                    xaxis = list(zeroline = FALSE))
+
+life_expectancy_vs_Measles 
+
+```
+
+
+<H5><b>4. Life expectancy vs BMI</b></H5>
+**BMI**
+represents average Body Mass Index of entire population
+
+```{r cars7}
+
+library(plotly)
+life_expectancy_vs_BMI <- plot_ly(data = life_expectancy_data, x = ~BMI, y = ~Life.expectancy,
+                                      marker = list(size = 10,
+                                                   color = 'rgba(255,182,193, .9)',
+                                            line = list(color = 'rgba(255, 0, 38, 0.2)',
+                                                        width = 2)))
+life_expectancy_vs_BMI <- life_expectancy_vs_BMI %>% layout(title = 'Scatter Plot: Life Expectancy vs BMI',
+                                                                    yaxis = list(zeroline = FALSE),
+                                                                    xaxis = list(zeroline = FALSE))
+
+life_expectancy_vs_BMI
+
+```
+
+
+<H5><b>5. Life expectancy vs under five deaths </b></H5>
+**Under five deaths**
+represents the number of under-five deaths per 1000 population
+
+```{r cars8}
+
+library(plotly)
+life_expectancy_vs_under_five_deaths  <- plot_ly(data = life_expectancy_data, x = ~under.five.deaths , y = ~Life.expectancy,
+                                      marker = list(size = 10,
+                                                 color = 'rgba(152,251,152, .9)',
+                                           line = list(color = 'rgba(255, 0, 38, 0.2)',
+                                                       width = 2)))
+
+life_expectancy_vs_under_five_deaths  <- life_expectancy_vs_under_five_deaths  %>% layout(title = 'Scatter Plot: Life Expectancy vs Under five deaths',
+                                                                    yaxis = list(zeroline = FALSE),
+                                                                    xaxis = list(zeroline = FALSE))
+
+life_expectancy_vs_under_five_deaths 
+
+```
+
+
+<H5><b>6. Life expectancy vs Polio </b></H5>
+**Polio**
+represents the number of under-five deaths per 1000 population
+
+```{r cars9}
+
+library(plotly)
+life_expectancy_vs_Polio  <- plot_ly(data = life_expectancy_data, x = ~Polio , y = ~Life.expectancy,
+                                      marker = list(size = 10,
+                                                   color = 'rgba(255,0,255, .9)',
+                                               line = list(color = 'rgba(255, 0, 38, 0.2)',
+                                                           width = 2)))
+life_expectancy_vs_Polio  <- life_expectancy_vs_Polio  %>% layout(title = 'Scatter Plot: Life Expectancy vs Polio',
+                                                                    yaxis = list(zeroline = FALSE),
+                                                                    xaxis = list(zeroline = FALSE))
+
+life_expectancy_vs_Polio 
+
+```
+
+
+
+<H5><b>7. Life expectancy vs Total expenditure </b></H5>
+**Total expenditure**
+represents general government expenditure on health as a percentage of total government expenditure (%)
+
+
+```{r cars10}
+library(plotly)
+life_expectancy_vs_Total_expenditure  <- plot_ly(data = life_expectancy_data, x = ~Total.expenditure , y = ~Life.expectancy,
+                                      marker = list(size = 10,
+                                                color = 'rgba(30,144,255, .9)',
+                                                    line = list(color = 'rgba(255, 0, 38, 0.2)',
+                                                                width = 2)))
+life_expectancy_vs_Total_expenditure  <- life_expectancy_vs_Total_expenditure  %>% layout(title = 'Scatter Plot: Life Expectancy vs Total expenditure',
+                                                                    yaxis = list(zeroline = FALSE),
+                                                                    xaxis = list(zeroline = FALSE))
+
+life_expectancy_vs_Total_expenditure 
+
+```
+
+
+<H5><b>8. Life expectancy vs Diphtheria  </b></H5>
+**Diphtheria **
+Diphtheria tetanus toxoid and pertussis (DTP3) immunization coverage among 1-year-olds (%)
+
+```{r cars11}
+
+library(plotly)
+life_expectancy_vs_Diphtheria  <- plot_ly(data = life_expectancy_data, x = ~Diphtheria , y = ~Life.expectancy,
+                                      marker = list(size = 10,
+                                                color = 'rgba(0, 255, 127, .9)',
+                                                line = list(color = 'rgba(255, 0, 38, 0.2)',
+                                                            width = 2)))
+life_expectancy_vs_Diphtheria  <- life_expectancy_vs_Diphtheria  %>% layout(title = 'Scatter Plot: Life Expectancy vs Diphtheria ',
+                                                                    yaxis = list(zeroline = FALSE),
+                                                                    xaxis = list(zeroline = FALSE))
+
+life_expectancy_vs_Diphtheria 
+
+```
+
+
+
+<H5><b>9. Life expectancy vs thinness 1 to 19 years  </b></H5>
+**thinness 1 to 19 years**
+Prevalence of thinness among children and adolescents for Age 10 to 19 (% )
+
+```{r cars12}
+
+library(plotly)
+life_expectancy_vs_thinness_1_19_years  <- plot_ly(data = life_expectancy_data, x = ~thinness..1.19.years , y = ~Life.expectancy,
+                                      marker = list(size = 10,
+                                                   color = 'rgba(129, 216, 210, .9)',
+                                                     line = list(color = 'rgba(255, 0, 38, 0.2)',
+                                                                 width = 2)))
+life_expectancy_vs_thinness_1_19_years  <- life_expectancy_vs_thinness_1_19_years %>% layout(title = 'Scatter Plot: Life Expectancy vs Thinness 1 to 19 years',
+                                                                    yaxis = list(zeroline = FALSE),
+                                                                    xaxis = list(zeroline = FALSE))
+
+life_expectancy_vs_thinness_1_19_years
+
+```
+
+
+<H5><b>10. Life expectancy vs thinness 5 to 9 years  </b></H5>
+**thinness 5 to 9 years**
+Prevalence of thinness among children for Age 5 to 9(%)
+
+```{r cars13}
+
+library(plotly)
+life_expectancy_vs_thinness_5_9_years  <- plot_ly(data = life_expectancy_data, x = ~thinness.5.9.years , y = ~Life.expectancy,
+                                      marker = list(size = 10,
+                                                      color = 'rgba(181, 201, 253, .9)',
+                                                  line = list(color = 'rgba(255, 0, 38, 0.2)',
+                                                              width = 2)))
+life_expectancy_vs_thinness_5_9_years  <- life_expectancy_vs_thinness_5_9_years %>% layout(title = 'Scatter Plot: Life Expectancy vs Thinness 5 to 9 years',
+                                                                    yaxis = list(zeroline = FALSE),
+                                                                    xaxis = list(zeroline = FALSE))
+
+life_expectancy_vs_thinness_5_9_years
+
+```
+
+<H5><b>11. Life expectancy vs Income composition of resources</b></H5>
+**Income composition of resources**
+Human Development Index in terms of income composition of resources (index ranging from 0 to 1)
+
+```{r cars14}
+
+library(plotly)
+life_expectancy_vs_Income_composition_of_resources <- plot_ly(data = life_expectancy_data, x = ~Income.composition.of.resources , y = ~Life.expectancy,
+                                      marker = list(size = 10,
+                                                      color = 'rgba(181, 201, 253, .9)',
+                                                  line = list(color = 'rgba(255, 0, 38, 0.2)',
+                                                              width = 2)))
+life_expectancy_vs_Income_composition_of_resources  <- life_expectancy_vs_Income_composition_of_resources %>% layout(title = 'Scatter Plot: Life Expectancy vs Income composition of resources',
+                                                                    yaxis = list(zeroline = FALSE),
+                                                                    xaxis = list(zeroline = FALSE))
+
+life_expectancy_vs_Income_composition_of_resources
+
+```
+
+
+<H5><b>12. Life expectancy vs GDP</b></H5>
+**GDP **
+Gross Domestic Product per capita (in USD)
+
+```{r cars15}
+
+library(plotly)
+life_expectancy_vs_GDP  <- plot_ly(data = life_expectancy_data, x = ~GDP , y = ~Life.expectancy,
+                                      marker = list(size = 10,
+                                               color = 'rgba(152, 215, 182, .9)',
+                                             line = list(color = 'rgba(255, 0, 38, 0.2)',
+                                                         width = 2)))
+life_expectancy_vs_GDP  <- life_expectancy_vs_GDP  %>% layout(title = 'Scatter Plot: Life Expectancy vs GDP ',
+                                                                    yaxis = list(zeroline = FALSE),
+                                                                    xaxis = list(zeroline = FALSE))
+
+life_expectancy_vs_GDP 
+
+```
+
+<H5><b>13. Life expectancy vs Alcohol</b></H5>
+**Alcohol **
+Gross Domestic Product per capita (in USD)
+
+```{r cars16}
+
+library(plotly)
+life_expectancy_vs_Alcohol  <- plot_ly(data = life_expectancy_data, x = ~Alcohol , y = ~Life.expectancy,
+                                      marker = list(size = 10,
+                                                 color = 'rgba(152, 215, 182, .9)',
+                                                 line = list(color = 'rgba(0, 0, 0, 0)',
+                                                             width = 2)))
+life_expectancy_vs_Alcohol  <- life_expectancy_vs_Alcohol  %>% layout(title = 'Scatter Plot: Life Expectancy vs Alcohol ',
+                                                                    yaxis = list(zeroline = FALSE),
+                                                                    xaxis = list(zeroline = FALSE))
+
+life_expectancy_vs_Alcohol 
+
+```
+
+
+<H2>Multiple Linear Regression</H2>
+
+Now that we have seen linear regression showing the relationship of Life Expectancy with each independent variables. Let's analyse the data set using multiple linear regression.
+
+Multiple linear regression is an extension of simple linear regression used to predict an outcome variable (y) on the basis of multiple distinct predictor variables (x).
+
+With three predictor variables (x), the prediction of y is expressed by the following equation:
+
+<b>y = b0 + b1*x1 + b2*x2 + b3*x3</b>
+
+The “b” values are called the regression weights (or beta coefficients). They measure the association between the predictor variable and the outcome. “b_j” can be interpreted as the average effect on y of a one unit increase in “x_j”, holding all other predictors fixed.
+
+
+```{r cars17}
+library(tidyverse)
+
+
+model <- lm(Life.expectancy ~ Alcohol + percentage.expenditure + Hepatitis.B + Measles +  BMI + under.five.deaths + Polio+ Total.expenditure + Diphtheria  + thinness..1.19.years +  thinness.5.9.years + Income.composition.of.resources, data = life_expectancy_data_num)
+summary(model)
+
+```
+
+The first step in interpreting the multiple regression analysis is to examine the F-statistic and the associated p-value, at the bottom of model summary.
+
+In our example, it can be seen that p-value of the F-statistic is < 2.2e-16, which is highly significant. This means that, at least, one of the predictor variables is significantly related to the outcome variable.
+
+To see which predictor variables are significant, you can examine the coefficients table, which shows the estimate of regression beta coefficients and the associated t-statitic p-values:
+
+```{r cars18}
+summary(model)$coefficient
+```
+
+For a given the predictor, the t-statistic evaluates whether or not there is significant association between the predictor and the outcome variable, that is whether the beta coefficient of the predictor is significantly different from zero.
+
+It can be seen that, change in the Alcohol,BMI,Polio, Total expenditure,Diphtheria, Thinness 1- 19 years, Thinness 5-9 years,Income composition of resources are significantly associated to life expectancy of a person.
+
+For a given predictor variable, the coefficient (b) can be interpreted as the average effect on y of a one unit increase in predictor, holding all other predictors fixed.
+
+We found that Measles, percentage expenditure,Hepatitis B, under five deaths cariables are not significant in the multiple regression model. We can remove these variables from our analysis.
+
+
+```{r cars19}
+library(tidyverse)
+
+
+model <- lm(Life.expectancy ~ Alcohol +  BMI +  Polio+ Total.expenditure + Diphtheria  + thinness..1.19.years +  thinness.5.9.years + Income.composition.of.resources, data = life_expectancy_data_num)
+summary(model)
+
+```
+
+Finally our model can be written as follow:
+
+<n>Life_Expectancy =  45.318748 + 0.033620 x Alcohol + 0.093951 x BMI +0.046490 x Polio +  0.016001 x Total.expenditure  + 0.045517 x Diphtheria -0.114326 x Thinness..1.19.years -0.09410 x Thinness.5.9.years + 21.599486 x Income.composition.of.resources</n>
+
+
+The confidence interval of the model coefficient can be extracted as follow:
+
+```{r cars20}
+confint(model)
+```
+
+<H2>Model accuracy assessment</H2>
+As we have seen in simple linear regression, the overall quality of the model can be assessed by examining the R-squared (R2) and Residual Standard Error (RSE).
+
+<b>R-squared:</b>
+
+In multiple linear regression, the R2 represents the correlation coefficient between the observed values of the outcome variable (y) and the fitted (i.e., predicted) values of y. For this reason, the value of R will always be positive and will range from zero to one.
+
+R2 represents the proportion of variance, in the outcome variable y, that may be predicted by knowing the value of the x variables. An R2 value close to 1 indicates that the model explains a large portion of the variance in the outcome variable.
+
+A problem with the R2, is that, it will always increase when more variables are added to the model, even if those variables are only weakly associated with the response (James et al. 2014). A solution is to adjust the R2 by taking into account the number of predictor variables.
+
+The adjustment in the “Adjusted R Square” value in the summary output is a correction for the number of x variables included in the prediction model.
+
+
+<b>Residual Standard Error (RSE), or sigma:</b>
+
+The RSE estimate gives a measure of error of prediction. The lower the RSE, the more accurate the model (on the data in hand).
+
+The error rate can be estimated by dividing the RSE by the mean outcome variable:
+
+
+```{r cars21}
+sigma(model)/mean(life_expectancy_data$Life.expectancy)
+
+```
+
+In our multiple regression example, the RSE is 5.860291 corresponding to 8.4% error rate which is pretty good.
+
+end
+
+
+
+
+
+
